@@ -1,4 +1,6 @@
 volumes:
+  spdr_etfs_postgres_data:
+    driver: local
   kestra_postgres_data:
     driver: local
   kestra_data:
@@ -7,6 +9,42 @@ volumes:
     driver: local
 
 services:
+  spdr-pipeline:
+    build: .
+    container_name: spdr-pipeline
+    depends_on:
+      pgdatabase:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://spdr:spdr@pgdatabase:5432/spdr_etfs
+
+  pgdatabase:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: spdr
+      POSTGRES_PASSWORD: spdr
+      POSTGRES_DB: spdr_etfs
+    ports:
+      - "5432:5432"
+    volumes:
+      - spdr_etfs_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U spdr -d spdr_etfs"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pgadmin:
+    image: dpage/pgadmin4
+    environment:
+      - PGADMIN_DEFAULT_EMAIL=spdr@spdr.com
+      - PGADMIN_DEFAULT_PASSWORD=spdr
+    ports:
+      - "8085:80"
+    depends_on:
+      pgdatabase:
+        condition: service_started
+
   kestra_postgres:
     image: postgres:17
     volumes:
@@ -51,11 +89,6 @@ services:
               basePath: "/app/storage"
           queue:
             type: postgres
-          ai:
-            type: gemini
-            gemini:
-              model-name: gemini-3.5-flash
-              api-key: ${GEMI_API_KEY}
           tasks:
             tmpDir:
               path: /tmp/kestra-wd/tmp

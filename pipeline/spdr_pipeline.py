@@ -15,6 +15,8 @@ warnings.filterwarnings('ignore')
 today = date.today().strftime('%Y%m%d')
 
 # # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # #
+# # # # # # # # # # # # # # # # # # # #
 
 dir_uploads        = 'uploads'
 dir_holdings       = 'holdings'
@@ -135,7 +137,7 @@ def download_financials(ticker, path):
             qtr_assets.reset_index()
             qtr_assets.insert(0, 'symbol', ticker)
             qtr_assets.to_parquet(f'{path}/{ticker.lower()}_qtr_assets_financial.parquet')
-            dates = yf.Ticker(ticker).earnings_dates.T
+            dates = yf.Ticker(ticker).earnings_dates
             dates.reset_index()
             dates.insert(0, 'symbol', ticker)
             dates.to_parquet(f'{path}/{ticker.lower()}_release_dates_financial.parquet')
@@ -179,6 +181,7 @@ def upload_many_to_gcs(files, bucket_name):
 # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # #
+
 print('SPDR PIPELINE\n')
 
 print('Composites:')
@@ -250,6 +253,7 @@ for opt in ('call', 'put'):
 # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # #
 # # # # # # # # # # # # # # # # # # # #
+
 print('\nConstituents:')
 
 get_uniques_ssga = duckdb.sql(f"""
